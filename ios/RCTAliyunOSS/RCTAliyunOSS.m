@@ -103,15 +103,21 @@ RCT_REMAP_METHOD(downloadObjectAsync, bucketName:(NSString *)bucketName objectKe
     };
     NSString *docDir = [self getDocumentDirectory];
     NSLog(objectKey);
-    NSURL *url = [NSURL fileURLWithPath:[docDir stringByAppendingPathComponent:objectKey]];
-    request.downloadToFileURL = url;
+//    NSURL *url = [NSURL fileURLWithPath:[docDir stringByAppendingPathComponent:objectKey]];
+//    request.downloadToFileURL = url;
     OSSTask *getTask = [client getObject:request];
     [getTask continueWithBlock:^id(OSSTask *task) {
         if (!task.error) {
             NSLog(@"download object success!");
             OSSGetObjectResult *result = task.result;
             NSLog(@"download dota length: %lu", [result.downloadedData length]);
-            resolve(url.absoluteString);
+//            图片进行base64编码
+            NSString *base64Image = [NSString stringWithUTF8String:[[result.downloadedData base64EncodedDataWithOptions:0] bytes]];
+            
+            NSString *res = [@"data:image/png;base64," stringByAppendingString:base64Image];
+            
+            resolve(res);
+//            resolve(url.absoluteString);
         } else {
             NSLog(@"download object failed, error: %@" ,task.error);
             reject(nil, @"download object failed", task.error);
@@ -119,7 +125,6 @@ RCT_REMAP_METHOD(downloadObjectAsync, bucketName:(NSString *)bucketName objectKe
         return nil;
     }];
 }
-
 //异步上传
 RCT_REMAP_METHOD(uploadObjectAsync, bucketName:(NSString *)BucketName
                   SourceFile:(NSString *)SourceFile
